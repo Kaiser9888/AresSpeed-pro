@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ares Speed - Cronômetro Downhill PRO</title>
+    
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#ff9f43">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚵</text></svg>">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- ============================================ -->
+    <!-- GOOGLE ADSENSE - COLE SEU CÓDIGO AQUI ↓↓↓ -->
+    <!-- ============================================ -->
+    <!--
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-SEU_CODIGO_AQUI"
+     crossorigin="anonymous"></script>
+    -->
+    
+    <!-- Service Worker PWA -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(() => console.log('✅ Service Worker OK'))
+                    .catch(err => console.log('❌ Erro SW:', err));
+            });
+        }
+    </script>
+    
+    <style>
+        /* Estilos para anúncios */
+        .ad-container {
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(255, 159, 67, 0.1);
+            border-radius: 10px;
+            border-left: 4px solid #ff9f43;
+            text-align: center;
+            min-height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+        
+        .ad-placeholder {
+            color: #888;
+            font-size: 0.9rem;
+            padding: 10px;
+        }
+        
+        .ad-placeholder i {
+            color: #ff9f43;
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+        }
+        
+        /* Quando for PRO, esconde anúncios */
+        .pro-user .ad-container {
+            display: none !important;
+        }
+        
+        /* Instruções para novos usuários */
+        .welcome-note {
+            margin-top: 25px;
+            padding: 15px;
+            background: rgba(255, 159, 67, 0.1);
+            border-radius: 10px;
+            border-left: 4px solid #ff9f43;
+            text-align: center;
+        }
+        
+        .welcome-note i {
+            color: #ff9f43;
+            margin-bottom: 10px;
+            font-size: 1.5rem;
+        }
+        
+        .welcome-note h4 {
+            color: white;
+            margin-bottom: 10px;
+        }
+        
+        .welcome-note p {
+            color: #ccc;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+<body>
+    <!-- Tela de Login -->
+    <div id="loginScreen" class="screen">
+        <div class="login-container">
+            <div class="logo">
+                <i class="fas fa-mountain"></i>
+                <h1>Ares <span class="speed">Speed</span></h1>
+                <p class="subtitle">Cronômetro de Downhill</p>
+            </div>
+            
+            <div class="tabs">
+                <button class="tab-btn active" onclick="showTab('login')">Login</button>
+                <button class="tab-btn" onclick="showTab('register')">Cadastro</button>
+            </div>
+            
+            <form id="loginForm" class="form" onsubmit="login(event)">
+                <div class="input-group">
+                    <i class="fas fa-envelope"></i>
+                    <input type="email" id="loginEmail" placeholder="Seu email" required>
+                </div>
+                <div class="input-group">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" id="loginPassword" placeholder="Sua senha" required>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-sign-in-alt"></i> Entrar
+                </button>
+            </form>
+            
+            <form id="registerForm" class="form" style="display: none;" onsubmit="register(event)">
+                <div class="input-group">
+                    <i class="fas fa-user"></i>
+                    <input type="text" id="registerName" placeholder="Seu nome" required>
+                </div>
+                <div class="input-group">
+                    <i class="fas fa-envelope"></i>
+                    <input type="email" id="registerEmail" placeholder="Seu email" required>
+                </div>
+                <div class="input-group">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" id="registerPassword" placeholder="Sua senha (mínimo 6 caracteres)" minlength="6" required>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-user-plus"></i> Criar Conta Gratuita
+                </button>
+            </form>
+            
+            <!-- Instruções para novos usuários -->
+            <div class="welcome-note">
+                <i class="fas fa-bicycle"></i>
+                <h4>Bem-vindo ao Ares Speed!</h4>
+                <p>Crie sua conta gratuita e comece a competir no ranking de downhill.</p>
+                <p><small>Seu progresso será salvo automaticamente no seu navegador.</small></p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Tela Principal -->
+    <div id="mainScreen" class="screen" style="display: none;">
+        <!-- Cabeçalho -->
+        <header class="header">
+            <div class="user-info">
+                <img src="" alt="Avatar" class="avatar" id="userAvatar">
+                <div>
+                    <h2 id="userName">Usuário</h2>
+                    <span id="userStatus" class="status free">FREE</span>
+                </div>
+            </div>
+            <button class="btn-icon" onclick="logout()" title="Sair">
+                <i class="fas fa-sign-out-alt"></i>
+            </button>
+        </header>
+        
+        <main class="main-content" id="mainContent">
+            <!-- ANÚNCIO 1 - Topo (FREE vê, PRO não vê) -->
+            <div class="ad-container" id="adTop">
+                <div class="ad-placeholder">
+                    <i class="fas fa-ad"></i><br>
+                    <small>📢 ANÚNCIO</small><br>
+                    <span style="font-size: 0.8rem;">Suporte nosso app!</span>
+                </div>
+            </div>
+            
+            <!-- Card Cronômetro -->
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-stopwatch"></i>
+                    <h3>Cronômetro GPS</h3>
+                </div>
+                <div class="card-body">
+                    <div class="timer-display" id="timer">00:00.000</div>
+                    <div class="speed-display">
+                        <div class="speed-item">
+                            <span>Velocidade</span>
+                            <strong id="currentSpeed">0.0 km/h</strong>
+                        </div>
+                        <div class="speed-item">
+                            <span>Máxima</span>
+                            <strong id="maxSpeed">0.0 km/h</strong>
+                        </div>
+                        <div class="speed-item">
+                            <span>Distância</span>
+                            <strong id="distance">0 m</strong>
+                        </div>
+                    </div>
+                    
+                    <div class="input-group">
+                        <i class="fas fa-route"></i>
+                        <input type="text" id="trailName" placeholder="Nome da trilha" value="Minha Trilha">
+                    </div>
+                    
+                    <div class="button-group">
+                        <button id="startBtn" class="btn btn-success" onclick="startTimer()">
+                            <i class="fas fa-play"></i> Iniciar Descida
+                        </button>
+                        <button id="stopBtn" class="btn btn-danger" onclick="stopTimer()" disabled>
+                            <i class="fas fa-stop"></i> Parar
+                        </button>
+                    </div>
+                    
+                    <div class="validation-info" id="validationInfo">
+                        <i class="fas fa-check-circle"></i>
+                        <span>Pronto para iniciar</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- ANÚNCIO 2 - Meio (FREE vê, PRO não vê) -->
+            <div class="ad-container" id="adMiddle">
+                <div class="ad-placeholder">
+                    <i class="fas fa-ad"></i><br>
+                    <small>📢 PATROCÍNIO</small><br>
+                    <span style="font-size: 0.8rem;">Espaço para anunciantes</span>
+                </div>
+            </div>
+            
+            <!-- Card Ranking -->
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-trophy"></i>
+                    <h3>🏆 Ranking</h3>
+                </div>
+                <div class="card-body">
+                    <div id="rankingList">
+                        <div class="empty-state">
+                            <i class="fas fa-trophy"></i><br>
+                            Faça sua primeira descida para aparecer no ranking!
+                        </div>
+                    </div>
+                    <button class="btn btn-secondary" onclick="loadRanking()">
+                        <i class="fas fa-sync-alt"></i> Atualizar Ranking
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Card Histórico -->
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-history"></i>
+                    <h3>Minhas Descidas</h3>
+                </div>
+                <div class="card-body">
+                    <div id="myRidesList">
+                        <div class="empty-state">
+                            <i class="fas fa-bicycle"></i><br>
+                            Nenhuma descida registrada ainda
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- ANÚNCIO 3 - Antes do PRO (FREE vê, PRO não vê) -->
+            <div class="ad-container" id="adBottom">
+                <div class="ad-placeholder">
+                    <i class="fas fa-ad"></i><br>
+                    <small>📢 ANÚNCIO</small><br>
+                    <span style="font-size: 0.8rem;">Torne-se PRO para remover anúncios!</span>
+                </div>
+            </div>
+            
+            <!-- Card PRO -->
+            <div class="card pro-card">
+                <div class="card-header">
+                    <i class="fas fa-crown"></i>
+                    <h3>Torne-se PRO</h3>
+                </div>
+                <div class="card-body">
+                    <ul class="pro-features">
+                        <li><i class="fas fa-check"></i> <strong>SEM ANÚNCIOS</strong></li>
+                        <li><i class="fas fa-check"></i> Descidas ilimitadas</li>
+                        <li><i class="fas fa-check"></i> Badge PRO no ranking</li>
+                        <li><i class="fas fa-check"></i> Histórico completo</li>
+                        <li><i class="fas fa-check"></i> Suporte prioritário</li>
+                    </ul>
+                    
+                    <div class="price">
+                        <span class="old-price">R$ 19,90</span>
+                        <span class="current-price">R$ 5,00</span>
+                        <span class="price-note">pagamento único • vitalício</span>
+                    </div>
+                    
+                    <button class="btn btn-premium" onclick="buyPro()" id="proBtn">
+                        <i class="fas fa-bolt"></i> VIRAR PRO - R$ 5,00
+                    </button>
+                    
+                    <p class="small-text">
+                        <i class="fas fa-shield-alt"></i> 100% seguro • 7 dias de garantia
+                    </p>
+                </div>
+            </div>
+        </main>
+        
+        <!-- Menu Inferior -->
+        <nav class="bottom-nav">
+            <button class="nav-btn active" onclick="showSection('timer')">
+                <i class="fas fa-stopwatch"></i>
+                <span>Cronômetro</span>
+            </button>
+            <button class="nav-btn" onclick="showSection('ranking')">
+                <i class="fas fa-trophy"></i>
+                <span>Ranking</span>
+            </button>
+            <button class="nav-btn" onclick="showSection('history')">
+                <i class="fas fa-history"></i>
+                <span>Histórico</span>
+            </button>
+            <button class="nav-btn" onclick="showSection('pro')">
+                <i class="fas fa-crown"></i>
+                <span>PRO</span>
+            </button>
+        </nav>
+    </div>
+    
+    <!-- Modal Pagamento PRO -->
+    <div id="paymentModal" class="modal">
+        <div class="modal-content">
+            <h3><i class="fas fa-crown"></i> Upgrade PRO</h3>
+            <p>Remova TODOS os anúncios e tenha acesso completo por:</p>
+            
+            <div class="price-display">R$ 5,00</div>
+            <p style="color: #00b894; font-weight: bold;">
+                <i class="fas fa-check-circle"></i> Pagamento único • Acesso vitalício
+            </p>
+            
+            <div class="payment-methods">
+                <div class="payment-method" onclick="selectPayment('pix')">
+                    <i class="fas fa-qrcode"></i>
+                    <span>PIX</span>
+                </div>
+                <div class="payment-method" onclick="selectPayment('card')">
+                    <i class="fas fa-credit-card"></i>
+                    <span>Cartão</span>
+                </div>
+            </div>
+            
+            <div id="paymentDetails">
+                <!-- Detalhes do pagamento aparecem aqui -->
+            </div>
+            
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closePaymentModal()">
+                    Cancelar
+                </button>
+                <button class="btn btn-primary" onclick="processPayment()" id="confirmPaymentBtn">
+                    <i class="fas fa-lock"></i> Confirmar Pagamento
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Toast Notifications -->
+    <div id="toast" class="toast"></div>
+    
+    <script src="app.js"></script>
+</body>
+</html>
